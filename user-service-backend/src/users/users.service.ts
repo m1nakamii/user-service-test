@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { GetUsersDto } from './dto/get-users.dto';
+import { throwError } from 'rxjs';
 
 @Injectable()
 export class UsersService {
@@ -21,7 +23,16 @@ export class UsersService {
     const [users, total] = await this.usersRepository.findAndCount({
       skip: (getUsersDto.page - 1) * getUsersDto.limit,
       take: getUsersDto.limit,
+      order: {id: 'ASC'},
     });
     return { users, total };
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
+    await this.usersRepository.update(id, updateUserDto);
+    return this.usersRepository.findOne({
+      where: { id },
+      order: {id: 'ASC'},
+    })
   }
 }
