@@ -2,19 +2,21 @@
   <div class="app">
     <h1>Управление пользователями</h1>
     
-    <button @click="showModal = true" class="add-button">Добавить пользователя</button>
+    <button @click="openCreateModal" class="add-button">Добавить пользователя</button>
     
     <user-modal 
-      v-if="showModal" 
-      @close="showModal = false" 
-      @save="addUser"
+      v-if="showModal"
+      :user="currentUser"
+      @close="closeModal"
+      @save="saveUser"
     />
     
     <user-table 
       :users="users" 
-      :total="total" 
+      :total="total"
       :current-page="currentPage"
       @page-change="changePage"
+      @edit-user="editUser"
     />
   </div>
 </template>
@@ -35,7 +37,8 @@ export default {
       users: [],
       total: 0,
       currentPage: 1,
-      limit: 10
+      limit: 10,
+      currentUser: null
     };
   },
   created() {
@@ -56,13 +59,29 @@ export default {
         console.error('Ошибка при загрузке пользователей:', error);
       }
     },
-    async addUser(userData) {
+    openCreateModal() {
+      this.currentUser = null;
+      this.showModal = true;
+    },
+    editUser(user) {
+      this.currentUser = { ...user };
+      this.showModal = true;
+    },
+    closeModal() {
+      this.showModal = false;
+      this.currentUser = null;
+    },
+    async saveUser(userData) {
       try {
-        await axios.post('http://localhost:3000/users', userData);
-        this.showModal = false;
+        if (this.currentUser) {
+          await axios.patch(`http://localhost:3000/users/${this.currentUser.id}`, userData);
+        } else {
+          await axios.post('http://localhost:3000/users', userData);
+        }
         this.fetchUsers();
+        this.closeModal();
       } catch (error) {
-        console.error('Ошибка при добавлении пользователя:', error);
+        console.error('Ошибка при сохранении пользователя:', error);
       }
     },
     changePage(page) {
