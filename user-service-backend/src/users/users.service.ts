@@ -19,20 +19,18 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async findAll(getUsersDto: GetUsersDto) {
-  const sortBy = (getUsersDto as any)._sortBy || 'id';
-  const order = (getUsersDto as any)._order || 'ASC';
+  async findAll(getUsersDto: GetUsersDto): Promise<{ users: User[]; total: number }> {
+    const [users, total] = await this.usersRepository.findAndCount({
+      skip: (getUsersDto.page - 1) * getUsersDto.limit,
+      take: getUsersDto.limit,
+      order: {id: 'ASC'},
+    });
+    return { users, total };
+  }
 
-  const [users, total] = await this.usersRepository.findAndCount({
-    skip: (getUsersDto.page - 1) * getUsersDto.limit,
-    take: getUsersDto.limit,
-    order: {
-      [sortBy]: order
-    }
-  });
-
-  return { users, total };
-}
+  async getTotalCount(): Promise<number> {
+    return this.usersRepository.count();
+  }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
     await this.usersRepository.update(id, updateUserDto);
@@ -41,18 +39,4 @@ export class UsersService {
       order: {id: 'ASC'},
     })
   }
-
-  async findAllWithArgs(args: {
-    page: number;
-    limit: number;
-    sortBy?: string;
-    order?: 'ASC' | 'DESC';}) 
-    {
-    return this.findAll({
-      page: args.page,
-      limit: args.limit,
-      sortBy: args.sortBy,
-      order: args.order
-    } as GetUsersDto);
-}
 }

@@ -4,6 +4,7 @@ import { UsersModule } from './users/users.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppResolver } from './app.resolver';
+import { UsersGraphQLModule } from './graphql/users/user.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -11,7 +12,7 @@ import { AppResolver } from './app.resolver';
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: '123',
+      password: 'voin72202004',
       database: 'user_service',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
@@ -21,7 +22,7 @@ import { AppResolver } from './app.resolver';
       autoSchemaFile: true,
       playground: true,
     }),
-    UsersModule,
+    UsersModule, UsersGraphQLModule,
   ],
   providers: [AppResolver],
 })

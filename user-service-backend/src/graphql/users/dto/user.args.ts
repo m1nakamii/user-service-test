@@ -2,15 +2,16 @@ import { ArgsType, Field, Int } from '@nestjs/graphql';
 
 @ArgsType()
 export class GetUsersArgs {
-  @Field(() => Int, { defaultValue: 1 })
+  @Field(() => Int)
   page: number;
 
-  @Field(() => Int, { defaultValue: 10 })
+  @Field(() => Int)
   limit: number;
 
   @Field({ nullable: true })
   sortBy?: string;
 
   @Field({ nullable: true })
-  order?: 'ASC' | 'DESC';
+  order?: string;
+
 }
