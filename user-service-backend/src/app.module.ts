@@ -1,10 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
-import { Module } from '@nestjs/common';
-import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -18,11 +14,6 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
       synchronize: true,
     }),
     UsersModule,
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      playground: true,
-      autoschemafile: true
-    }),
   ],
 })
 export class AppModule {}
