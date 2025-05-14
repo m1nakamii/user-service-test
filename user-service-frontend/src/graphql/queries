@@ -1,0 +1,38 @@
+import { gql } from '@apollo/client/core';
+
+export const GET_USERS = gql`
+  query GetUsers($page: Int!, $limit: Int!) {
+    users(page: $page, limit: $limit) {
+      list {
+        id
+        fullName
+        phone
+        createdAt
+      }
+      totalUsers
+    }
+  }
+`;
+
+export const CREATE_USER = gql`
+  mutation CreateUser($data: CreateUserInput!) {
+    createUser(data: $data) {
+      id
+      fullName
+      phone
+      createdAt
+    }
+  }
+`;
+
+
+export const UPDATE_USER = gql`
+  mutation UpdateUser($data: UpdateUserInput!) {
+    updateUser(data: $data) {
+      id
+      fullName
+      phone
+      createdAt
+    }
+  }
+`;

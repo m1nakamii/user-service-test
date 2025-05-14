@@ -1,16 +1,16 @@
 <template>
   <div class="app">
     <h1>Управление пользователями</h1>
-    
+
     <button @click="openCreateModal" class="add-button">Добавить пользователя</button>
-    
+
     <user-modal 
       v-if="showModal"
       :user="currentUser"
       @close="closeModal"
       @save="saveUser"
     />
-    
+
     <user-table 
       :users="users" 
       :total="total"
@@ -22,72 +22,97 @@
 </template>
 
 <script>
+import { useQuery, useMutation } from '@vue/apollo-composable';
+import { GET_USERS, CREATE_USER, UPDATE_USER } from './graphql/queries';
+import { ref, computed } from 'vue';
 import UserModal from './components/UserModal.vue';
 import UserTable from './components/UserTable.vue';
-import axios from 'axios';
 
 export default {
   components: {
     UserModal,
     UserTable
   },
-  data() {
-    return {
-      showModal: false,
-      users: [],
-      total: 0,
-      currentPage: 1,
-      limit: 10,
-      currentUser: null
+  setup() {
+    const showModal = ref(false);
+    const currentUser = ref(null);
+    const currentPage = ref(1);
+    const limit = 10;
+
+    const { result, refetch } = useQuery(GET_USERS, {
+      page: currentPage.value,
+      limit: limit
+    });
+
+    const users = computed(() => result.value?.users?.list || []);
+    const total = computed(() => result.value?.users?.totalUsers || 0);
+
+    const { mutate: createUser } = useMutation(CREATE_USER);
+    const { mutate: updateUser } = useMutation(UPDATE_USER);
+
+    const openCreateModal = () => {
+      currentUser.value = null;
+      showModal.value = true;
     };
-  },
-  created() {
-    this.fetchUsers();
-  },
-  methods: {
-    async fetchUsers() {
+
+    const editUser = (user) => {
+      currentUser.value = { ...user };
+      showModal.value = true;
+    };
+
+    const closeModal = () => {
+      showModal.value = false;
+      currentUser.value = null;
+    };
+
+    const saveUser = async (userData) => {
       try {
-        const response = await axios.get('http://localhost:3000/users', {
-          params: {
-            page: this.currentPage,
-            limit: this.limit
-          }
-        });
-        this.users = response.data.users;
-        this.total = response.data.total;
-      } catch (error) {
-        console.error('Ошибка при загрузке пользователей:', error);
-      }
-    },
-    openCreateModal() {
-      this.currentUser = null;
-      this.showModal = true;
-    },
-    editUser(user) {
-      this.currentUser = { ...user };
-      this.showModal = true;
-    },
-    closeModal() {
-      this.showModal = false;
-      this.currentUser = null;
-    },
-    async saveUser(userData) {
-      try {
-        if (this.currentUser) {
-          await axios.patch(`http://localhost:3000/users/${this.currentUser.id}`, userData);
+        if (currentUser.value) {
+          const cleanUserData = {
+            id: currentUser.value.id,
+            fullName: userData.fullName,
+            phone: userData.phone
+          };
+
+          await updateUser({
+            id: currentUser.value.id,
+            data: cleanUserData
+          });
         } else {
-          await axios.post('http://localhost:3000/users', userData);
+          await createUser({ data: userData });
         }
-        this.fetchUsers();
-        this.closeModal();
+
+        await refetch({
+          page: currentPage.value,
+          limit: limit
+        });
+
+        closeModal();
       } catch (error) {
-        console.error('Ошибка при сохранении пользователя:', error);
+        console.error('ОШИБКА ПРИ СОХРАНЕНИИ ПОЛЬЗОВАТЕЛЯ:', error);
       }
-    },
-    changePage(page) {
-      this.currentPage = page;
-      this.fetchUsers();
-    }
+    };
+
+    const changePage = (page) => {
+      currentPage.value = page;
+      refetch({
+        page: currentPage.value,
+        limit: limit
+      });
+    };
+
+    return {
+      showModal,
+      users,
+      total,
+      currentPage,
+      currentUser,
+      openCreateModal,
+      editUser,
+      closeModal,
+      saveUser,
+      changePage
+    };
   }
 };
 </script>
