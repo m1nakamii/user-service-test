@@ -18,20 +18,25 @@
       @page-change="changePage"
       @edit-user="editUser"
     />
+
+    <h2>График новых пользователей по дням</h2>
+    <line-chart :chart-data="chartData" />
   </div>
 </template>
 
 <script>
 import { useQuery, useMutation } from '@vue/apollo-composable';
-import { GET_USERS, CREATE_USER, UPDATE_USER } from './graphql/queries';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import UserModal from './components/UserModal.vue';
 import UserTable from './components/UserTable.vue';
+import LineChart from './components/LineChart.vue';
+import { GET_USERS, GET_ALL_USERS, CREATE_USER, UPDATE_USER } from './graphql/queries';
 
 export default {
   components: {
     UserModal,
-    UserTable
+    UserTable,
+    LineChart
   },
   setup() {
     const showModal = ref(false);
@@ -39,13 +44,40 @@ export default {
     const currentPage = ref(1);
     const limit = 10;
 
-    const { result, refetch } = useQuery(GET_USERS, {
+    const { result: paginatedResult, refetch: refetchPaginated } = useQuery(GET_USERS, {
       page: currentPage.value,
-      limit: limit
+      limit
     });
 
-    const users = computed(() => result.value?.users?.list || []);
-    const total = computed(() => result.value?.users?.totalUsers || 0);
+    const users = computed(() => paginatedResult.value?.users?.list || []);
+    const total = computed(() => paginatedResult.value?.users?.totalUsers || 0);
+
+    const { result: allUsersResult, refetch: refetchAllUsers } = useQuery(GET_ALL_USERS);
+
+    const chartData = computed(() => {
+      const allUsers = allUsersResult.value?.users?.list || [];
+      const dateMap = new Map();
+      allUsers.forEach(user => {
+        const date = new Date(user.createdAt).toISOString().slice(0, 10);
+        dateMap.set(date, (dateMap.get(date) || 0) + 1);
+      });
+
+      const labels = Array.from(dateMap.keys()).sort();
+      const counts = labels.map(date => dateMap.get(date));
+
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Новые пользователи',
+            data: counts,
+            borderColor: '#42A5F5',
+            backgroundColor: 'rgba(66, 165, 245, 0.2)',
+            tension: 0.4
+          }
+        ]
+      };
+    });
 
     const { mutate: createUser } = useMutation(CREATE_USER);
     const { mutate: updateUser } = useMutation(UPDATE_USER);
@@ -68,38 +100,32 @@ export default {
     const saveUser = async (userData) => {
       try {
         if (currentUser.value) {
-          const cleanUserData = {
+          const cleanData = {
             id: currentUser.value.id,
             fullName: userData.fullName,
             phone: userData.phone
           };
-
-          await updateUser({
-            id: currentUser.value.id,
-            data: cleanUserData
-          });
+          await updateUser({ id: cleanData.id, data: cleanData });
         } else {
           await createUser({ data: userData });
         }
 
-        await refetch({
-          page: currentPage.value,
-          limit: limit
-        });
-
+        await refetchPaginated({ page: currentPage.value, limit });
+        await refetchAllUsers();
         closeModal();
       } catch (error) {
-        console.error('ОШИБКА ПРИ СОХРАНЕНИИ ПОЛЬЗОВАТЕЛЯ:', error);
+        console.error('Ошибка при сохранении:', error);
       }
     };
 
     const changePage = (page) => {
       currentPage.value = page;
-      refetch({
-        page: currentPage.value,
-        limit: limit
-      });
+      refetchPaginated({ page: page, limit });
     };
+
+    watch(currentPage, (newPage) => {
+      refetchPaginated({ page: newPage, limit });
+    });
 
     return {
       showModal,
@@ -111,7 +137,8 @@ export default {
       editUser,
       closeModal,
       saveUser,
-      changePage
+      changePage,
+      chartData
     };
   }
 };
