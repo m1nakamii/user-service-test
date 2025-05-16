@@ -15,6 +15,16 @@ class UsersResponse {
   totalUsers: number;
 }
 
+@ObjectType()
+class DailyUserStat {
+  @Field()
+  date: string;
+
+  @Field(() => Int)
+  count: number;
+}
+
+
 @Resolver(() => User)
 export class UsersResolver {
   constructor(private readonly usersService: UsersService) {}
@@ -30,6 +40,11 @@ export class UsersResolver {
     };
   }
   
+  @Query(() => [DailyUserStat])
+  async dailyUserStats() {
+    return this.usersService.getDailyUserStats();
+  }
+
   @Mutation(() => User)
   async createUser(@Args('data') data: CreateUserInput): Promise<User> {
     return this.usersService.create(data);

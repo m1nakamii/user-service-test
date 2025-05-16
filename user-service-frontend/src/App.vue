@@ -19,8 +19,10 @@
       @edit-user="editUser"
     />
 
-    <h2>График новых пользователей по дням</h2>
-    <line-chart :chart-data="chartData" />
+    <div class="chart-container">
+      <h2>График новых пользователей по дням</h2>
+      <line-chart v-if="chartData" :chart-data="chartData" />
+    </div>
   </div>
 </template>
 
@@ -30,7 +32,7 @@ import { ref, computed, watch } from 'vue';
 import UserModal from './components/UserModal.vue';
 import UserTable from './components/UserTable.vue';
 import LineChart from './components/LineChart.vue';
-import { GET_USERS, GET_ALL_USERS, CREATE_USER, UPDATE_USER } from './graphql/queries';
+import { GET_USERS, CREATE_USER, UPDATE_USER, GET_DAILY_USER_STATS } from './graphql/queries';
 
 export default {
   components: {
@@ -49,21 +51,16 @@ export default {
       limit
     });
 
+    const { result: statsResult, refetch: refetchStats } = useQuery(GET_DAILY_USER_STATS);
+
     const users = computed(() => paginatedResult.value?.users?.list || []);
     const total = computed(() => paginatedResult.value?.users?.totalUsers || 0);
 
-    const { result: allUsersResult, refetch: refetchAllUsers } = useQuery(GET_ALL_USERS);
-
     const chartData = computed(() => {
-      const allUsers = allUsersResult.value?.users?.list || [];
-      const dateMap = new Map();
-      allUsers.forEach(user => {
-        const date = new Date(user.createdAt).toISOString().slice(0, 10);
-        dateMap.set(date, (dateMap.get(date) || 0) + 1);
-      });
+      const stats = statsResult.value?.dailyUserStats || [];
 
-      const labels = Array.from(dateMap.keys()).sort();
-      const counts = labels.map(date => dateMap.get(date));
+      const labels = stats.map(item => item.date);
+      const counts = stats.map(item => item.count);
 
       return {
         labels,
@@ -73,7 +70,9 @@ export default {
             data: counts,
             borderColor: '#42A5F5',
             backgroundColor: 'rgba(66, 165, 245, 0.2)',
-            tension: 0.4
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#1e88e5'
           }
         ]
       };
@@ -111,7 +110,7 @@ export default {
         }
 
         await refetchPaginated({ page: currentPage.value, limit });
-        await refetchAllUsers();
+        await refetchStats();
         closeModal();
       } catch (error) {
         console.error('Ошибка при сохранении:', error);
@@ -120,7 +119,7 @@ export default {
 
     const changePage = (page) => {
       currentPage.value = page;
-      refetchPaginated({ page: page, limit });
+      refetchPaginated({ page, limit });
     };
 
     watch(currentPage, (newPage) => {
@@ -164,5 +163,13 @@ export default {
 
 .add-button:hover {
   background-color: #45a049;
+}
+
+.chart-container {
+  margin-top: 40px;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 </style>

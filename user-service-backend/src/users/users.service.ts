@@ -39,4 +39,14 @@ export class UsersService {
       order: {id: 'ASC'},
     })
   }
+
+  async getDailyUserStats(): Promise<{ date: string; count: number }[]> {
+    return this.usersRepository
+    .createQueryBuilder('user')
+    .select("TO_CHAR(user.createdAt, 'YYYY-MM-DD')", 'date')
+    .addSelect('COUNT(*)', 'count')
+    .groupBy("TO_CHAR(user.createdAt, 'YYYY-MM-DD')")
+    .orderBy('date', 'ASC')
+    .getRawMany();
+}
 }
