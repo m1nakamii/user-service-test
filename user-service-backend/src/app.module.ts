@@ -5,6 +5,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppResolver } from './app.resolver';
 import { UsersGraphQLModule } from './graphql/users/user.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -21,6 +22,9 @@ import { UsersGraphQLModule } from './graphql/users/user.module';
       driver: ApolloDriver,
       autoSchemaFile: true,
       playground: true,
+       subscriptions: {
+        'graphql-ws': true,
+      },
     }),
     UsersModule, UsersGraphQLModule,
   ],

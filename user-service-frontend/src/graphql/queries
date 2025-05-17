@@ -45,3 +45,14 @@ export const GET_DAILY_USER_STATS = gql`
     }
   }
 `;
+
+export const USER_CHANGED_SUBSCRIPTION = gql`
+  subscription userChanged {
+    userChanged {
+      id
+      fullName
+      phone
+      createdAt
+    }
+  }
+`;
