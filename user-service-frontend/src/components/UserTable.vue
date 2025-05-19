@@ -1,29 +1,42 @@
 <template>
   <div class="user-table">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>ФИО</th>
-          <th>Телефон</th>
-          <th>Дата создания</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr 
-          v-for="user in users" 
-          :key="user.id"
-          @click="$emit('edit-user', user)"
-          class="clickable-row"
-        >
-          <td>{{ user.id }}</td>
-          <td>{{ user.fullName }}</td>
-          <td>{{ user.phone }}</td>
-          <td>{{ new Date(user.createdAt).toLocaleString() }}</td>
-        </tr>
-      </tbody>
-    </table>
-    
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>ФИО</th>
+            <th>Телефон</th>
+            <th>Дата создания</th>
+            <th class="icon-header"></th> <!-- Добавлен заголовок для иконок -->
+          </tr>
+        </thead>
+        <tbody>
+          <tr 
+            v-for="user in users" 
+            :key="user.id"
+            @click="$emit('edit-user', user)"
+            class="clickable-row"
+          >
+            <td>{{ user.id }}</td>
+            <td>{{ user.fullName }}</td>
+            <td>{{ user.phone }}</td>
+            <td>{{ new Date(user.createdAt).toLocaleString() }}</td>
+            <td class="icon-cell">
+              <img 
+                src="@/assets/user.png"
+                alt="Инфо"
+                width="20"
+                height="20"
+                class="info-icon"
+                @click.stop="$emit('show-info', user)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="pagination" v-if="total > limit">
       <button 
         v-for="page in pageCount" 
@@ -40,18 +53,9 @@
 <script>
 export default {
   props: {
-    users: {
-      type: Array,
-      required: true
-    },
-    total: {
-      type: Number,
-      required: true
-    },
-    currentPage: {
-      type: Number,
-      required: true
-    },
+    users: Array,
+    total: Number,
+    currentPage: Number,
     limit: {
       type: Number,
       default: 10
@@ -62,13 +66,17 @@ export default {
       return Math.ceil(this.total / this.limit);
     }
   },
-  emits: ['page-change', 'edit-user']
+  emits: ['page-change', 'edit-user', 'show-info']
 };
 </script>
 
 <style>
 .user-table {
   margin-top: 20px;
+}
+
+.table-wrapper {
+  position: relative;
 }
 
 table {
@@ -93,6 +101,21 @@ th {
 
 .clickable-row:hover {
   background-color: #f5f5f5;
+}
+
+/* Стили для иконок */
+.icon-header {
+  width: 40px;
+}
+
+.icon-cell {
+  padding: 8px 4px;
+  text-align: center;
+}
+
+.info-icon {
+  cursor: pointer;
+  vertical-align: middle;
 }
 
 .pagination {

@@ -17,6 +17,13 @@
       :current-page="currentPage"
       @page-change="changePage"
       @edit-user="editUser"
+      @show-info="showUserInfo"
+    />
+
+    <user-info-modal
+      v-if="showInfoModal"
+      :user="infoUser"
+      @close="closeInfoModal"
     />
 
     <div class="chart-container">
@@ -31,6 +38,7 @@ import { useQuery, useMutation, useSubscription } from '@vue/apollo-composable';
 import { ref, computed, watch } from 'vue';
 import UserModal from './components/UserModal.vue';
 import UserTable from './components/UserTable.vue';
+import UserInfoModal from './components/UserInfoModal.vue';
 import LineChart from './components/LineChart.vue';
 import { GET_USERS, CREATE_USER, UPDATE_USER, GET_DAILY_USER_STATS, USER_CHANGED_SUBSCRIPTION } from './graphql/queries';
 
@@ -38,6 +46,7 @@ export default {
   components: {
     UserModal,
     UserTable,
+    UserInfoModal,
     LineChart
   },
   setup() {
@@ -46,26 +55,24 @@ export default {
     const currentPage = ref(1);
     const limit = 10;
 
-    // Запрос пользователей с пагинацией
+    const showInfoModal = ref(false);
+    const infoUser = ref(null);
+
     const { result: paginatedResult, refetch: refetchPaginated } = useQuery(GET_USERS, {
       page: currentPage.value,
       limit
     });
 
-    // Запрос статистики для графика
     const { result: statsResult, refetch: refetchStats } = useQuery(GET_DAILY_USER_STATS);
 
-    // Подписка на изменения пользователей
     const { result: subscriptionResult, error: subscriptionError } = useSubscription(USER_CHANGED_SUBSCRIPTION);
 
-    // Корректный watch для отслеживания ошибок подписки
     watch(subscriptionError, (error) => {
       if (error) {
         console.error('Subscription error:', error);
       }
     });
 
-    // При появлении новых данных в подписке обновим списки и график
     watch(subscriptionResult, (newVal) => {
       if (newVal?.userChanged) {
         refetchPaginated({ page: currentPage.value, limit });
@@ -146,6 +153,17 @@ export default {
       refetchPaginated({ page: newPage, limit });
     });
 
+    // Открыть модальное окно с информацией
+    const showUserInfo = (user) => {
+      infoUser.value = user;
+      showInfoModal.value = true;
+    };
+
+    const closeInfoModal = () => {
+      showInfoModal.value = false;
+      infoUser.value = null;
+    };
+
     return {
       showModal,
       users,
@@ -157,7 +175,11 @@ export default {
       closeModal,
       saveUser,
       changePage,
-      chartData
+      chartData,
+      showInfoModal,
+      infoUser,
+      showUserInfo,
+      closeInfoModal
     };
   }
 };
