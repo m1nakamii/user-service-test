@@ -8,7 +8,7 @@
             <th>ФИО</th>
             <th>Телефон</th>
             <th>Дата создания</th>
-            <th class="icon-header"></th> <!-- Добавлен заголовок для иконок -->
+            <th class="icon-header"></th>
           </tr>
         </thead>
         <tbody>
@@ -29,7 +29,7 @@
                 width="20"
                 height="20"
                 class="info-icon"
-                @click.stop="$emit('show-info', user)"
+                @click.stop="goToUserPage(user)"
               />
             </td>
           </tr>
@@ -66,7 +66,22 @@ export default {
       return Math.ceil(this.total / this.limit);
     }
   },
-  emits: ['page-change', 'edit-user', 'show-info']
+  emits: ['page-change', 'edit-user', 'show-info'],
+  methods: {
+    goToUserPage(user) {
+      if (this.$router) {
+        this.$router.push({
+          name: 'UserInfo',
+          params: { 
+            id: user.id,
+          }
+        })
+      } else {
+        console.error('Router is not available')
+        window.location.href = `/user/${user.id}`
+      }
+    }
+  }
 };
 </script>
 
@@ -103,7 +118,6 @@ th {
   background-color: #f5f5f5;
 }
 
-/* Стили для иконок */
 .icon-header {
   width: 40px;
 }
